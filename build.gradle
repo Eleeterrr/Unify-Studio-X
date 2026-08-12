@@ -1,0 +1,43 @@
+plugins {
+    id 'java'
+    id 'application'
+}
+
+application {
+    mainClass = 'eleeter.unifystudiox.Main'
+}
+
+
+group = 'eleeter.unifystudiox'
+version = '1.0-SNAPSHOT'
+
+/* Detect OS for natives */
+project.ext.lwjglVersion = "3.4.1"
+project.ext.jomlVersion = "1.10.8"
+project.ext.platform = org.gradle.internal.os.OperatingSystem.current().isWindows() ? "windows" : org.gradle.internal.os.OperatingSystem.current().isMacOsX() ? "macos" : "linux"
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+
+    /* LWJGL Core */
+    implementation platform("org.lwjgl:lwjgl-bom:${project.ext.lwjglVersion}")
+    implementation "org.lwjgl:lwjgl"
+    implementation "org.lwjgl:lwjgl-glfw"
+    implementation "org.lwjgl:lwjgl-opengl"
+    implementation "org.lwjgl:lwjgl-stb"
+    implementation "com.google.code.gson:gson:2.10.1"
+    implementation "org.joml:joml:${project.ext.jomlVersion}"
+    implementation files('libs/elfontlib-1.0-SNAPSHOT-all.jar')
+
+    runtimeOnly "org.lwjgl:lwjgl::natives-${project.ext.platform}"
+    runtimeOnly "org.lwjgl:lwjgl-glfw::natives-${project.ext.platform}"
+    runtimeOnly "org.lwjgl:lwjgl-opengl::natives-${project.ext.platform}"
+    runtimeOnly "org.lwjgl:lwjgl-stb::natives-${project.ext.platform}"
+}
+
+test {
+    useJUnitPlatform()
+}
