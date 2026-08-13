@@ -1,19 +1,13 @@
 package eleeter.unifystudiox.ui.widgets;
 
-import org.joml.Vector4f;
-
 import eleeter.unifystudiox.graphics.TextureGL;
-import eleeter.unifystudiox.graphics.layout.AttributeType;
-import eleeter.unifystudiox.graphics.layout.BufferLayout;
-import eleeter.unifystudiox.graphics.text.render.MeshData;
-import eleeter.unifystudiox.graphics.text.render.TextMeshGenerator;
 import eleeter.unifystudiox.graphics.text.render.font.Font;
-import eleeter.unifystudiox.graphics.text.render.shaping.TextLayout;
-import eleeter.unifystudiox.graphics.text.render.shaping.TextShaper;
 import eleeter.unifystudiox.i18n.I18nKey;
 import eleeter.unifystudiox.renderer.FontManager;
 import eleeter.unifystudiox.ui.framework.render.UIPanel;
 import eleeter.unifystudiox.ui.framework.render.UIRenderer;
+import eleeter.unifystudiox.ui.framework.render.UITextRenderer;
+import org.joml.Vector4f;
 
 public class UILabel extends UIPanel
 {
@@ -30,9 +24,7 @@ public class UILabel extends UIPanel
     private I18nKey i18nKey = null;
 
     private boolean textDirty = true;
-    private MeshData textMesh = null;
-    private float textWidth = 0f;
-    private float textHeight = 0f;
+    private UITextRenderer.TextHandle textMesh = UITextRenderer.TextHandle.EMPTY;
 
     public UILabel(String id)
     {
@@ -49,6 +41,7 @@ public class UILabel extends UIPanel
             this.textDirty = true;
         }
     }
+
     public void setKey(I18nKey key)
     {
         this.i18nKey = key;
@@ -80,45 +73,13 @@ public class UILabel extends UIPanel
 
     private void rebuildTextMesh()
     {
-        if (this.textMesh != null)
-        {
-            
-            this.textMesh = null;
-        }
-
-        if (this.text == null || this.text.isEmpty())
-        {
-            return;
-        }
-
-        Font font = FontManager.getFont(this.fontKey);
-        if (font == null)
-            return;
-
-        TextShaper shaper = new TextShaper();
-        TextLayout layout = shaper.shape(this.text, font, font.getNativeSize());
-
-        MeshData data = TextMeshGenerator.generate(layout, font);
-
-        if (data.indices.length == 0)
-            return;
-
-        this.textWidth = layout.getWidth();
-        this.textHeight = layout.getHeight();
-
-        BufferLayout layoutSpec = BufferLayout
-                .builder()
-                .add(0, 3, AttributeType.FLOAT)
-                .add(1, 2, AttributeType.FLOAT)
-                .build();
-
-        this.textMesh = data;
+        this.textMesh.release();
+        this.textMesh = UITextRenderer.acquire(this.text, this.fontKey);
     }
 
     @Override
     protected void updateSelfLogic(eleeter.unifystudiox.ui.framework.render.context.UIInputContext context, double deltaTime)
     {
-        /* If bound to an i18n key, check every frame whether the language changed */
         if (this.i18nKey != null)
         {
             String live = this.i18nKey.getValue();
@@ -139,52 +100,51 @@ public class UILabel extends UIPanel
     @Override
     protected void renderSelf(UIRenderer renderer)
     {
-        if (this.textMesh != null)
+        if (!this.textMesh.isValid()) return;
+
+        TextureGL atlas = FontManager.getAtlas(this.fontKey);
+        if (atlas == null) return;
+
+        float w = getComputedWidth();
+        float h = getComputedHeight();
+
+        float scale = 1.0f;
+        if (this.textMesh.getWidth() > w)
         {
-            TextureGL atlas = FontManager.getAtlas(this.fontKey);
-            if (atlas != null)
-            {
-                float w = getComputedWidth();
-                float h = getComputedHeight();
-
-                float scale = 1.0f;
-                if (this.textWidth > w)           scale = w / this.textWidth;
-                if (this.textHeight * scale > h)  scale = h / this.textHeight;
-
-                float scaledW = this.textWidth  * scale;
-                float scaledH = this.textHeight * scale;
-
-                float x  = getComputedX();
-                float y  = getComputedY();
-
-                float cx = x;
-                if      (this.alignment == Align.CENTER) cx = x + (w - scaledW) * 0.5f;
-                else if (this.alignment == Align.RIGHT)  cx = x + w - scaledW;
-
-                float cy = y + (h - scaledH) * 0.5f;
-
-                Font font = FontManager.getFont(this.fontKey);
-                if (font != null)
-                {
-                    cy += font.getBaseline() * font.getNativeSize() * scale;
-                }
-
-                renderer.pushClip(x, y, w, h);
-                float textAlpha = this.isEnabled() ? this.textColor.w : this.textColor.w * 0.4f;
-                renderer.drawText(this.textMesh, atlas, cx, cy, scale, this.textColor.x, this.textColor.y, this.textColor.z, textAlpha);
-                renderer.popClip();
-            }
+            scale = w / this.textMesh.getWidth();
         }
+
+        if (this.textMesh.getHeight() * scale > h)
+        {
+            scale = h / this.textMesh.getHeight();
+        }
+
+        float scaledW = this.textMesh.getWidth() * scale;
+        float scaledH = this.textMesh.getHeight() * scale;
+
+        float x = getComputedX();
+        float y = getComputedY();
+
+        if (this.alignment == Align.CENTER) this.cx = x + (w - scaledW) * 0.5f;
+        else if (this.alignment == Align.RIGHT) this.cx = x + w - scaledW;
+
+        float cy = y + (h - scaledH) * 0.5f;
+
+        Font font = FontManager.getFont(this.fontKey);
+        if (font != null)
+        {
+            cy += font.getBaseline() * font.getNativeSize() * scale;
+        }
+
+        renderer.pushClip(x, y, w, h);
+        float textAlpha = this.isEnabled() ? this.textColor.w : this.textColor.w * 0.4f;
+        renderer.drawText(this.textMesh.getMesh(), atlas, this.cx, cy, scale, this.textColor.x, this.textColor.y, this.textColor.z, textAlpha);
+        renderer.popClip();
     }
 
     public void cleanup()
     {
-        if (this.textMesh != null)
-        {
-            
-            this.textMesh = null;
-        }
+        this.textMesh.release();
+        this.textMesh = UITextRenderer.TextHandle.EMPTY;
     }
-
-    
 }
