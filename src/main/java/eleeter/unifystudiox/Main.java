@@ -62,7 +62,8 @@ public class Main
         Scene scene = new Scene();
         UIShell.boot(scene.getUi().getRoot());
 
-        Renderer renderer = new Renderer(new GLGraphicsBackend());
+        GLGraphicsBackend backend = new GLGraphicsBackend();
+        Renderer renderer = new Renderer(backend);
         AssetManager assetManager = new AssetManager();
         AnimationSystem animationSystem = new AnimationSystemImpl();
         scene.setAnimationSystem(animationSystem);
@@ -157,7 +158,8 @@ public class Main
         postStack.addEffect(chroma);
         DepthOfFieldEffect dof = new DepthOfFieldEffect();
         postStack.addEffect(dof);
-        window.run(scene, renderer);
+        SplashScreen.close();
+        window.run(scene, renderer, backend);
         vfxRenderer.destroy();
         postStack.dispose();
         SettingsIO.save();

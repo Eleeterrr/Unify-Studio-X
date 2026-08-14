@@ -56,6 +56,11 @@ public class CloudRenderer implements EntityRenderer<CloudEntity>
         this.vao = Vao.builder().bindVertexBuffer(this.vbo, LAYOUT).build();
 
         this.shader = Shaders.Cloud();
+
+        if (this.shader == null)
+        {
+            throw new IllegalStateException("CloudRenderer initialized before Shaders.Cloud() was available");
+        }
         this.initialized = true;
     }
 
@@ -128,9 +133,20 @@ public class CloudRenderer implements EntityRenderer<CloudEntity>
     {
         if (this.initialized)
         {
-            this.vao.destroy();
-            this.vbo.destroy();
-            this.shader.cleanup();
+            if (this.vao != null)
+            {
+                this.vao.destroy();
+            }
+
+            if (this.vbo != null)
+            {
+                this.vbo.destroy();
+            }
+
+            if (this.shader != null)
+            {
+                this.shader.cleanup();
+            }
         }
     }
 }

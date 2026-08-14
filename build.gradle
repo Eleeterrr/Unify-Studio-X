@@ -18,6 +18,8 @@ project.ext.platform = org.gradle.internal.os.OperatingSystem.current().isWindow
 
 repositories {
     mavenCentral()
+    flatDir { dirs 'libs' }
+    maven { url 'https://jitpack.io' }
 }
 
 dependencies {
@@ -30,7 +32,7 @@ dependencies {
     implementation "org.lwjgl:lwjgl-stb"
     implementation "com.google.code.gson:gson:2.10.1"
     implementation "org.joml:joml:${project.ext.jomlVersion}"
-    implementation files('libs/elfontlib-1.0-SNAPSHOT-all.jar')
+    implementation 'com.github.Eleeterrr:ElFontLib:main-SNAPSHOT'
 
     runtimeOnly "org.lwjgl:lwjgl::natives-${project.ext.platform}"
     runtimeOnly "org.lwjgl:lwjgl-glfw::natives-${project.ext.platform}"

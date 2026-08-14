@@ -4,6 +4,7 @@ import eleeter.unifystudiox.graphics.layout.Icon;
 import eleeter.unifystudiox.input.InputHandler;
 import eleeter.unifystudiox.renderer.Renderer;
 import eleeter.unifystudiox.renderer.core.RenderSettings;
+import eleeter.unifystudiox.graphics.gl.GLGraphicsBackend;
 import eleeter.unifystudiox.scene.Scene;
 import eleeter.unifystudiox.ui.UIKey;
 import eleeter.unifystudiox.util.ScreenshotCapture;
@@ -79,11 +80,14 @@ public class Window
 
 
 
-    public void run(Scene scene, Renderer renderer)
+    public void run(Scene scene, Renderer renderer, GLGraphicsBackend backend)
     {
         try
         {
             this.init();
+
+            Shaders.init(backend);
+
             this.inputHandler = new InputHandler(this.windowHandle);
             this.screenshotCapture.init();
 
@@ -106,6 +110,7 @@ public class Window
         } finally
         {
             renderer.cleanup();
+            Shaders.cleanup();
             glfwFreeCallbacks(this.windowHandle);
             glfwDestroyWindow(this.windowHandle);
             glfwTerminate();
