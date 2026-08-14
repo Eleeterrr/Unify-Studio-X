@@ -6,6 +6,7 @@ import eleeter.unifystudiox.assets.browser.AssetBrowserItemType;
 import eleeter.unifystudiox.assets.browser.AssetBrowserSection;
 import eleeter.unifystudiox.ui.ShapeDraw;
 import eleeter.unifystudiox.ui.UIKey;
+import eleeter.unifystudiox.ui.framework.layout.GridLayout;
 import eleeter.unifystudiox.ui.assets.placement.AssetPlacementController;
 import eleeter.unifystudiox.ui.framework.UIElement;
 import eleeter.unifystudiox.ui.framework.render.UIBoxMath;
@@ -450,28 +451,31 @@ public class UIAssetsPanel extends UIPanel implements IContextMenuProvider
         clearTileChildren();
 
         float cursorY = TILE_PADDING;
+
         for (AssetBrowserSection section : sections)
         {
             this.addChild(createSectionHeader(section, contentWidth, cursorY));
             cursorY += SECTION_HEADER_H + 6.0F;
 
             List<AssetBrowserItem> items = section.getItems();
+
+            List<GridLayout.TileSlot> slots = GridLayout.layout(items.size(), columns, TILE_SIZE, TILE_TOTAL_H, TILE_PADDING, cursorY);
+
             for (int i = 0; i < items.size(); i++)
             {
-                int col = i % columns;
-                int row = i / columns;
-                float tileX = TILE_PADDING + (float) col * (TILE_SIZE + TILE_PADDING);
-                float tileY = cursorY + (float) row * (TILE_TOTAL_H + TILE_PADDING);
+                GridLayout.TileSlot slot = slots.get(i);
 
                 AssetBrowserTile tile = new AssetBrowserTile("asset_browser_tile_" + section.getId() + "_" + items.get(i).getId(), items.get(i), this.previewRenderer);
+
                 tile.setZIndex(21);
-                tile.getTransform().set(0.0F, 0.0F, 0.0F, 0.0F).setPixelOffset((int) tileX, (int) tileY).setPixelSize((int) TILE_SIZE, (int) TILE_TOTAL_H);
+
+                tile.getTransform().set(0.0F, 0.0F, 0.0F, 0.0F).setPixelOffset((int) slot.x(), (int) slot.y()).setPixelSize((int) TILE_SIZE, (int) TILE_TOTAL_H);
+
                 tile.setOnClick(this::onTileClicked);
                 this.addChild(tile);
             }
 
-            int rows = items.isEmpty() ? 0 : ((items.size() + columns - 1) / columns);
-            cursorY += (float) rows * (TILE_TOTAL_H + TILE_PADDING) + 20.0F;
+            cursorY += GridLayout.rowsHeight(items.size(), columns, TILE_TOTAL_H, TILE_PADDING) + 20.0F;
         }
 
         this.totalContentHeight = cursorY + TILE_PADDING;
@@ -519,8 +523,7 @@ public class UIAssetsPanel extends UIPanel implements IContextMenuProvider
 
     private int computeColumnCount(float width)
     {
-        float cellWidth = TILE_SIZE + TILE_PADDING;
-        return Math.max(1, (int) Math.floor(width / cellWidth));
+        return GridLayout.computeColumns(width, TILE_SIZE, TILE_PADDING);
     }
 
     private void onTileClicked(AssetBrowserItem item)
