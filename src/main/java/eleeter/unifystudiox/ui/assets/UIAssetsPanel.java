@@ -6,9 +6,10 @@ import eleeter.unifystudiox.assets.browser.AssetBrowserItemType;
 import eleeter.unifystudiox.assets.browser.AssetBrowserSection;
 import eleeter.unifystudiox.ui.ShapeDraw;
 import eleeter.unifystudiox.ui.UIKey;
-import eleeter.unifystudiox.ui.framework.layout.GridLayout;
 import eleeter.unifystudiox.ui.assets.placement.AssetPlacementController;
 import eleeter.unifystudiox.ui.framework.UIElement;
+import eleeter.unifystudiox.ui.framework.layout.GridLayout;
+import eleeter.unifystudiox.ui.framework.layout.UIRect;
 import eleeter.unifystudiox.ui.framework.render.UIBoxMath;
 import eleeter.unifystudiox.ui.framework.render.UIPanel;
 import eleeter.unifystudiox.ui.framework.render.UIRenderer;
@@ -17,26 +18,27 @@ import eleeter.unifystudiox.ui.menu.UIContextMenu;
 import eleeter.unifystudiox.ui.model_editor.UIModelEditSpace;
 import eleeter.unifystudiox.ui.theme.UIDropShadow;
 import eleeter.unifystudiox.ui.widgets.UILabel;
+import eleeter.unifystudiox.ui.widgets.UIScrollContainer;
 import java.util.ArrayList;
 import java.util.List;
 
 public class UIAssetsPanel extends UIPanel implements IContextMenuProvider
 {
-
     private static final float HEADER_H = 38.0F;
     private static final float FOOTER_H = 18.0F;
     private static final float BORDER = 1.0F;
-    private static final float SCROLLBAR_W = 6.0F;
 
     private static final float TILE_PADDING = 14.0F;
     private static final float TILE_SIZE = 156.0F;
-    private static final float TILE_TOTAL_H = TILE_SIZE + 22.0F + 18.F + 8.0F;
+    private static final float TILE_TOTAL_H = TILE_SIZE + 22.0F + 18.0F + 8.0F;
     private static final float SECTION_HEADER_H = 24.0F;
 
-    private float panelWidth = 800F;
-    private float panelHeight = 500F;
+    private float panelWidth = 800.0F;
+    private float panelHeight = 500.0F;
+
     private float panelOffsetX = 0.0F;
     private float panelOffsetY = 0.0F;
+
     private float baseX = 0.0F;
     private float baseY = 0.0F;
     private boolean baseInitialized = false;
@@ -51,13 +53,12 @@ public class UIAssetsPanel extends UIPanel implements IContextMenuProvider
     private float dragStartH = 0.0F;
     private float gripHoverProgress = 0.0F;
 
-    private final eleeter.unifystudiox.ui.framework.render.ScrollState scroll;
-    private float totalContentHeight = 0.0F;
-
     private boolean lastToggleKeyState;
     private final AssetBrowserDataSource browserDataSource;
     private final ModelPreviewRenderer previewRenderer;
     private final UILabel titleLabel;
+    private final UIScrollContainer content;
+
     private UIDropShadow shadow;
 
     private int lastBrowserRevision = -1;
@@ -77,9 +78,12 @@ public class UIAssetsPanel extends UIPanel implements IContextMenuProvider
         this.browserDataSource = browserDataSource;
         this.previewRenderer = new ModelPreviewRenderer();
 
-        this.scroll = new eleeter.unifystudiox.ui.framework.render.ScrollState(new eleeter.unifystudiox.ui.framework.render.Region());
-        this.scroll.scrollbarWidth = SCROLLBAR_W;
-        this.scroll.scrollSpeed = 40.0F;
+        this.content = new UIScrollContainer("assets_panel_content");
+        this.content.setScrollbarWidth(6.0F);
+        this.content.setScrollSpeed(40.0F);
+        this.content.setZIndex(20);
+
+        this.addChild(this.content);
 
         this.setBlocksInput(true);
         this.setVisible(false);
@@ -91,10 +95,9 @@ public class UIAssetsPanel extends UIPanel implements IContextMenuProvider
         this.titleLabel.setText("Asset Browser");
         this.titleLabel.setAlignment(UILabel.Align.LEFT);
         this.titleLabel.setTextColor(0.88F, 0.91F, 0.98F, 1.0F);
-        this.titleLabel.getTransform()
-                .set(0.0F, 0.0F, 1.0F, 0.0F)
-                .setPixelOffset(20, 10)
-                .setPixelSize(-44, (int) HEADER_H - 14);
+
+        this.titleLabel.getTransform().set(0.0F, 0.0F, 1.0F, 0.0F).setPixelOffset(20, 10).setPixelSize(-44, (int) HEADER_H - 14);
+
         this.addChild(this.titleLabel);
     }
 
@@ -124,17 +127,10 @@ public class UIAssetsPanel extends UIPanel implements IContextMenuProvider
         float contentX = this.cx + BORDER;
         float contentY = this.cy + HEADER_H;
         float contentW = this.cw - BORDER * 2.0F;
+        float contentH = this.ch - HEADER_H - FOOTER_H - BORDER;
 
-        float scrollOffset = this.scroll.getScroll();
-        for (UIElement child : getChildren())
-        {
-            if (child == this.titleLabel)
-            {
-                continue;
-            }
-            child.markDirty();
-            child.updateLayout(contentX, contentY - scrollOffset, contentW, this.totalContentHeight);
-        }
+        this.content.markDirty();
+        this.content.updateLayout(contentX, contentY, contentW, contentH);
     }
 
     @Override
@@ -144,8 +140,8 @@ public class UIAssetsPanel extends UIPanel implements IContextMenuProvider
         {
             return false;
         }
-        return x >= this.cx && x < this.cx + this.cw
-                && y >= this.cy && y < this.cy + this.ch;
+
+        return UIRect.contains(x, y, this.cx, this.cy, this.cw, this.ch);
     }
 
     @Override
@@ -158,36 +154,8 @@ public class UIAssetsPanel extends UIPanel implements IContextMenuProvider
 
         renderSelf(renderer);
 
+        this.content.render(renderer);
         this.titleLabel.render(renderer);
-
-        float contentX = this.cx + BORDER;
-        float contentY = this.cy + HEADER_H;
-        float contentW = this.cw - BORDER * 2.0F;
-        float contentH = this.ch - HEADER_H - FOOTER_H - BORDER;
-
-        renderer.pushClip(contentX, contentY, contentW, contentH);
-
-        for (UIElement child : getChildren())
-        {
-            if (child == this.titleLabel)
-            {
-                continue;
-            }
-            child.render(renderer);
-        }
-
-        this.scroll.region.set(contentX, contentY, contentW - SCROLLBAR_W, contentH);
-
-        if (this.scroll.hasScrollbar())
-        {
-            eleeter.unifystudiox.ui.framework.render.Region track = this.scroll.getScrollregion();
-            eleeter.unifystudiox.ui.framework.render.Region thumb = this.scroll.getScrollbarregion();
-            renderer.drawRect(track.x, track.y, track.w, track.h, 0.08F, 0.09F, 0.11F, 0.55F);
-            float thumbAlpha = this.scroll.dragging ? 0.85F : 0.48F;
-            renderer.drawRoundedRect(track.x, thumb.y, track.w, thumb.h, 0.28F, 0.50F, 0.98F, thumbAlpha, 3.0F);
-        }
-
-        renderer.popClip();
     }
 
     @Override
@@ -236,20 +204,12 @@ public class UIAssetsPanel extends UIPanel implements IContextMenuProvider
         float contentW = pw - BORDER * 2.0F;
         float contentH = ph - HEADER_H - FOOTER_H - BORDER;
 
-        this.scroll.region.set(contentX, contentY, contentW - SCROLLBAR_W, contentH);
-        this.scroll.clamp();
 
-        if (context.isMousePressed())
-        {
-            this.scroll.mouseClicked(context);
-        }
-        if (!context.isMouseDown())
-        {
-            this.scroll.mouseReleased(context);
-        }
-        this.scroll.mouseScroll(context);
-        this.scroll.drag(context);
-        this.scroll.clamp();
+        this.content.markDirty();
+        float viewportX = this.content.getViewport().x;
+        float viewportY = this.content.getViewport().y;
+        float viewportW = this.content.getViewport().w;
+        float viewportH = this.content.getViewport().h;
 
         float gripX = px + pw - 14.0F - 6.0F;
         float gripY = py + ph - FOOTER_H;
@@ -273,10 +233,9 @@ public class UIAssetsPanel extends UIPanel implements IContextMenuProvider
         {
             if (context.isMouseDown())
             {
-                this.panelWidth = UIBoxMath.calculateResize(
-                        this.dragStartW, this.dragStartMouseX, context.getMouseX(), 380F, 2000.0F);
-                this.panelHeight = UIBoxMath.calculateResize(
-                        this.dragStartH, this.dragStartMouseY, context.getMouseY(), 280.0F, 2000.0F);
+                this.panelWidth = UIBoxMath.calculateResize(this.dragStartW, this.dragStartMouseX, context.getMouseX(), 380.0F, 2000.0F);
+
+                this.panelHeight = UIBoxMath.calculateResize(this.dragStartH, this.dragStartMouseY, context.getMouseY(), 280.0F, 2000.0F);
                 this.markDirty();
                 this.lastContentWidth = -1.0F;
             } else
@@ -309,11 +268,11 @@ public class UIAssetsPanel extends UIPanel implements IContextMenuProvider
 
         this.browserDataSource.refresh();
         this.previewRenderer.syncAssets(this.browserDataSource.getPreviewModels());
-        updatePreviewInteraction(context, contentX, contentY, contentW, contentH);
-        this.previewRenderer.renderPending(isMouseInsideContent(context, contentX, contentY, contentW, contentH) ? 12 : 2);
+        updatePreviewInteraction(context, viewportX, viewportY, viewportW, viewportH);
+        this.previewRenderer.renderPending(isMouseInsideContent(context, viewportX, viewportY, viewportW, viewportH) ? 12 : 2);
 
         int revision = this.browserDataSource.getRevision();
-        float usableW = Math.max(1.0F, contentW - SCROLLBAR_W - TILE_PADDING);
+        float usableW = Math.max(1.0F, contentW - 6.0F - TILE_PADDING);
         int columns = computeColumnCount(usableW);
         boolean layoutChanged = Math.abs(usableW - this.lastContentWidth) > 0.5F || columns != this.lastColumns;
 
@@ -324,7 +283,7 @@ public class UIAssetsPanel extends UIPanel implements IContextMenuProvider
             this.lastColumns = columns;
             this.lastContentWidth = usableW;
         }
-        for (UIElement child : getChildren())
+        for (UIElement child : this.content.getChildren())
         {
             if (child instanceof AssetBrowserTile)
             {
@@ -341,25 +300,10 @@ public class UIAssetsPanel extends UIPanel implements IContextMenuProvider
             return;
         }
 
-        float contentX = this.cx + BORDER;
-        float contentY = this.cy + HEADER_H;
-        float contentW = this.cw - BORDER * 2.0F;
-        float contentH = this.ch - HEADER_H - FOOTER_H - BORDER;
 
         this.titleLabel.collectInteractable(out);
 
-        for (UIElement child : getChildren())
-        {
-            if (child == this.titleLabel)
-            {
-                continue;
-            }
-
-            if (rectsIntersect(child.cx, child.cy, child.cw, child.ch, contentX, contentY, contentW, contentH))
-            {
-                child.collectInteractable(out);
-            }
-        }
+        this.content.collectInteractable(out);
 
         if (this.getBlocksInput())
         {
@@ -419,7 +363,6 @@ public class UIAssetsPanel extends UIPanel implements IContextMenuProvider
         renderer.drawRect(gx - 2.0F, gy - 4.0F, 2.0F, 2.0F, gr, gg, gb, ga * 0.25F);
     }
 
-
     public void cleanupResources()
     {
         this.previewRenderer.cleanup();
@@ -433,16 +376,15 @@ public class UIAssetsPanel extends UIPanel implements IContextMenuProvider
     private void clearTileChildren()
     {
         List<UIElement> toRemove = new ArrayList<>();
-        for (UIElement child : getChildren())
+
+        for (UIElement child : this.content.getChildren())
         {
-            if (child != this.titleLabel)
-            {
-                toRemove.add(child);
-            }
+            toRemove.add(child);
         }
+
         for (UIElement child : toRemove)
         {
-            this.removeChild(child);
+            this.content.removeChild(child);
         }
     }
 
@@ -454,7 +396,8 @@ public class UIAssetsPanel extends UIPanel implements IContextMenuProvider
 
         for (AssetBrowserSection section : sections)
         {
-            this.addChild(createSectionHeader(section, contentWidth, cursorY));
+            this.content.addChild(createSectionHeader(section, contentWidth, cursorY));
+
             cursorY += SECTION_HEADER_H + 6.0F;
 
             List<AssetBrowserItem> items = section.getItems();
@@ -465,22 +408,25 @@ public class UIAssetsPanel extends UIPanel implements IContextMenuProvider
             {
                 GridLayout.TileSlot slot = slots.get(i);
 
-                AssetBrowserTile tile = new AssetBrowserTile("asset_browser_tile_" + section.getId() + "_" + items.get(i).getId(), items.get(i), this.previewRenderer);
+                AssetBrowserItem item = items.get(i);
+
+                AssetBrowserTile tile = new AssetBrowserTile("asset_browser_tile_" + section.getId() + "_" + item.getId(), item, this.previewRenderer);
 
                 tile.setZIndex(21);
 
                 tile.getTransform().set(0.0F, 0.0F, 0.0F, 0.0F).setPixelOffset((int) slot.x(), (int) slot.y()).setPixelSize((int) TILE_SIZE, (int) TILE_TOTAL_H);
 
                 tile.setOnClick(this::onTileClicked);
-                this.addChild(tile);
+
+                this.content.addChild(tile);
             }
 
             cursorY += GridLayout.rowsHeight(items.size(), columns, TILE_TOTAL_H, TILE_PADDING) + 20.0F;
         }
 
-        this.totalContentHeight = cursorY + TILE_PADDING;
-        this.scroll.scrollSize = this.totalContentHeight;
-        this.scroll.clamp();
+        float totalContentHeight = cursorY + TILE_PADDING;
+
+        this.content.setContentHeight(totalContentHeight);
     }
 
     private UILabel createSectionHeader(AssetBrowserSection section, float contentWidth, float y)
@@ -511,14 +457,9 @@ public class UIAssetsPanel extends UIPanel implements IContextMenuProvider
         this.previewRenderer.addPreviewRotationDelta(deltaX * 0.35F, deltaY * 0.35F);
     }
 
-    private boolean isMouseInsidePanel(eleeter.unifystudiox.ui.framework.render.context.UIInputContext context)
+    private boolean isMouseInsideContent(eleeter.unifystudiox.ui.framework.render.context.UIInputContext context, float x, float y, float w, float h)
     {
-        return context.getMouseX() >= this.cx && context.getMouseX() <= this.cx + this.cw && context.getMouseY() >= this.cy && context.getMouseY() <= this.cy + this.ch;
-    }
-
-    private boolean isMouseInsideContent(eleeter.unifystudiox.ui.framework.render.context.UIInputContext context, float cx2, float cy2, float cw2, float ch2)
-    {
-        return context.getMouseX() >= cx2 && context.getMouseX() <= cx2 + cw2 && context.getMouseY() >= cy2 && context.getMouseY() <= cy2 + ch2;
+        return UIRect.contains(context.getMouseX(), context.getMouseY(), x, y, w, h);
     }
 
     private int computeColumnCount(float width)
@@ -584,13 +525,5 @@ public class UIAssetsPanel extends UIPanel implements IContextMenuProvider
     private static float lerp(float a, float b, float t)
     {
         return a + (b - a) * t;
-    }
-
-    /**
-     * Returns true when two axis-aligned rectangles overlap
-     */
-    private static boolean rectsIntersect(float ax, float ay, float aw, float ah, float bx, float by, float bw, float bh)
-    {
-        return ax < bx + bw && ax + aw > bx && ay < by + bh && ay + ah > by;
     }
 }
