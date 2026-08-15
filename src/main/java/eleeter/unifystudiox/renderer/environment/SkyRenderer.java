@@ -9,6 +9,8 @@ import eleeter.unifystudiox.graphics.VertexBuffer;
 import eleeter.unifystudiox.graphics.api.IShaderProgram;
 import eleeter.unifystudiox.graphics.buffer.GpuBufferUsage;
 import eleeter.unifystudiox.graphics.gfx.PipelineState;
+import eleeter.unifystudiox.graphics.math.Geometry;
+import eleeter.unifystudiox.graphics.math.GeometryData;
 import eleeter.unifystudiox.graphics.layout.AttributeType;
 import eleeter.unifystudiox.graphics.layout.BufferLayout;
 import eleeter.unifystudiox.renderer.core.RenderBucket;
@@ -40,23 +42,9 @@ public class SkyRenderer implements EntityRenderer<SkyEntity>
 
     private void initGpuResources(RenderContext context)
     {
-        float[] vertices =
-                {
-                        -1.0F, 1.0F, -1.0F, -1.0F, -1.0F, -1.0F, 1.0F, -1.0F, -1.0F,
-                        1.0F, -1.0F, -1.0F, 1.0F, 1.0F, -1.0F, -1.0F, 1.0F, -1.0F,
-                        -1.0F, -1.0F, 1.0F, -1.0F, -1.0F, -1.0F, -1.0F, 1.0F, -1.0F,
-                        -1.0F, 1.0F, -1.0F, -1.0F, 1.0F, 1.0F, -1.0F, -1.0F, 1.0F,
-                        1.0F, -1.0F, -1.0F, 1.0F, -1.0F, 1.0F, 1.0F, 1.0F, 1.0F,
-                        1.0F, 1.0F, 1.0F, 1.0F, 1.0F, -1.0F, 1.0F, -1.0F, -1.0F,
-                        -1.0F, -1.0F, 1.0F, 1.0F, -1.0F, 1.0F, 1.0F, 1.0F, 1.0F,
-                        1.0F, 1.0F, 1.0F, -1.0F, 1.0F, 1.0F, -1.0F, -1.0F, 1.0F,
-                        -1.0F, 1.0F, -1.0F, 1.0F, 1.0F, -1.0F, 1.0F, 1.0F, 1.0F,
-                        1.0F, 1.0F, 1.0F, -1.0F, 1.0F, 1.0F, -1.0F, 1.0F, -1.0F,
-                        -1.0F, -1.0F, -1.0F, -1.0F, -1.0F, 1.0F, 1.0F, -1.0F, -1.0F,
-                        1.0F, -1.0F, -1.0F, -1.0F, -1.0F, 1.0F, 1.0F, -1.0F, 1.0F
-                };
 
-        this.vbo = new VertexBuffer(vertices, GpuBufferUsage.STATIC);
+        GeometryData geometry = Geometry.cubePositionUnindexed(2.0F, 2.0F, 2.0F);
+        this.vbo = new VertexBuffer(geometry.vertices(), GpuBufferUsage.STATIC);
         this.vao = Vao.builder().bindVertexBuffer(this.vbo, LAYOUT).build();
 
         /* TODO: ADD THESE SHADER PATH IN THE Shaders class.

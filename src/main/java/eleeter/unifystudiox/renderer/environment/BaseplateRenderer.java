@@ -3,6 +3,8 @@ package eleeter.unifystudiox.renderer.environment;
 import eleeter.unifystudiox.graphics.TextureGL;
 import eleeter.unifystudiox.graphics.TransformStack;
 import eleeter.unifystudiox.graphics.Vao;
+import eleeter.unifystudiox.graphics.math.Geometry;
+import eleeter.unifystudiox.graphics.math.GeometryData;
 import eleeter.unifystudiox.graphics.VertexBuffer;
 import eleeter.unifystudiox.graphics.api.IShaderProgram;
 import eleeter.unifystudiox.graphics.buffer.GpuBufferUsage;
@@ -42,53 +44,11 @@ public class BaseplateRenderer implements EntityRenderer<BaseplateEntity>
 
     private void initGpuResources(BaseplateEntity entity)
     {
-        float uvRepeat = 50f;
+        GeometryData geometry = Geometry.cube(1.0F, 1.0F, 1.0F);
 
-        float[] vertices =
-                {
-                        -0.5f, 0.0f, -0.5f, 0, 1, 0, 0, 0,
-                        0.5f, 0.0f, -0.5f, 0, 1, 0, uvRepeat, 0,
-                        0.5f, 0.0f, 0.5f, 0, 1, 0, uvRepeat, uvRepeat,
-                        -0.5f, 0.0f, 0.5f, 0, 1, 0, 0, uvRepeat,
+        this.vboObject = new VertexBuffer(geometry.vertices(), GpuBufferUsage.STATIC);
 
-                        -0.5f, -1.0f, -0.5f, 0, -1, 0, 0, 0,
-                        0.5f, -1.0f, -0.5f, 0, -1, 0, 1, 0,
-                        0.5f, -1.0f, 0.5f, 0, -1, 0, 1, 1,
-                        -0.5f, -1.0f, 0.5f, 0, -1, 0, 0, 1,
-
-                        -0.5f, -1.0f, 0.5f, 0, 0, 1, 0, 0,
-                        0.5f, -1.0f, 0.5f, 0, 0, 1, 1, 0,
-                        0.5f, 0.0f, 0.5f, 0, 0, 1, 1, 1,
-                        -0.5f, 0.0f, 0.5f, 0, 0, 1, 0, 1,
-
-                        -0.5f, -1.0f, -0.5f, 0, 0, -1, 0, 0,
-                        -0.5f, 0.0f, -0.5f, 0, 0, -1, 1, 0,
-                        0.5f, 0.0f, -0.5f, 0, 0, -1, 1, 1,
-                        0.5f, -1.0f, -0.5f, 0, 0, -1, 0, 1,
-
-                        -0.5f, -1.0f, -0.5f, -1, 0, 0, 0, 0,
-                        -0.5f, -1.0f, 0.5f, -1, 0, 0, 1, 0,
-                        -0.5f, 0.0f, 0.5f, -1, 0, 0, 1, 1,
-                        -0.5f, 0.0f, -0.5f, -1, 0, 0, 0, 1,
-
-                        0.5f, -1.0f, -0.5f, 1, 0, 0, 0, 0,
-                        0.5f, 0.0f, -0.5f, 1, 0, 0, 1, 0,
-                        0.5f, 0.0f, 0.5f, 1, 0, 0, 1, 1,
-                        0.5f, -1.0f, 0.5f, 1, 0, 0, 0, 1
-                };
-
-        int[] indices =
-                {
-                        0, 3, 2, 0, 2, 1, // Top
-                        4, 5, 6, 4, 6, 7, // Bottom
-                        8, 9, 10, 8, 10, 11, // Front
-                        12, 13, 14, 12, 14, 15, // Back
-                        16, 17, 18, 16, 18, 19, // Left
-                        20, 21, 22, 20, 22, 23 // Right
-                };
-
-        this.vboObject = new VertexBuffer(vertices, GpuBufferUsage.STATIC);
-        this.eboObject = new VertexBuffer(indices, GpuBufferUsage.STATIC);
+        this.eboObject = new VertexBuffer(geometry.indices(), GpuBufferUsage.STATIC);
 
         this.vaoObject = Vao.builder().bindVertexBuffer(this.vboObject, BASEPLATE_LAYOUT).elementBuffer(this.eboObject).build();
 
