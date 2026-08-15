@@ -1,4 +1,4 @@
-package eleeter.unifystudiox.graphics;
+package eleeter.unifystudiox.graphics.math;
 
 import org.joml.Matrix4f;
 import org.joml.Quaternionf;

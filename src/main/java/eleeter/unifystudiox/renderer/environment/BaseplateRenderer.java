@@ -1,7 +1,7 @@
 package eleeter.unifystudiox.renderer.environment;
 
 import eleeter.unifystudiox.graphics.TextureGL;
-import eleeter.unifystudiox.graphics.TransformStack;
+import eleeter.unifystudiox.graphics.math.TransformStack;
 import eleeter.unifystudiox.graphics.Vao;
 import eleeter.unifystudiox.graphics.math.Geometry;
 import eleeter.unifystudiox.graphics.math.GeometryData;

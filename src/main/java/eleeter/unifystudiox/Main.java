@@ -7,6 +7,7 @@ import eleeter.unifystudiox.assets.browser.SceneAssetBrowserDataSource;
 import eleeter.unifystudiox.editor.animation.ModelEditorLayout;
 import eleeter.unifystudiox.graphics.Window;
 import eleeter.unifystudiox.graphics.gl.GLGraphicsBackend;
+import eleeter.unifystudiox.graphics.TextureGL;
 import eleeter.unifystudiox.i18n.I18nEngine;
 import eleeter.unifystudiox.renderer.Renderer;
 import eleeter.unifystudiox.renderer.postprocess.ACESTonemapEffect;
@@ -29,6 +30,8 @@ import eleeter.unifystudiox.settings.SettingsIO;
 import eleeter.unifystudiox.settings.SettingsRegister;
 import eleeter.unifystudiox.settings.menu.MenuBarRegistry;
 import eleeter.unifystudiox.ui.SettingsPanel;
+import eleeter.unifystudiox.renderer.environment.BaseplateRenderer;
+import eleeter.unifystudiox.scene.entity.BaseplateEntity;
 import eleeter.unifystudiox.ui.assets.UIAssetsPanel;
 import eleeter.unifystudiox.ui.assets.placement.AssetPlacementController;
 import eleeter.unifystudiox.ui.assets.placement.WorldRaycaster;
@@ -87,6 +90,9 @@ public class Main
 
         CloudEntity clouds = new CloudEntity("sys_clouds");
         scene.addEntity(clouds);
+        BaseplateEntity baseplate = new BaseplateEntity("world_floor", 100f, 100f, 1.0f);
+        baseplate.setTexture(TextureGL.loadCached("/textures/baseplate.png"));
+        scene.addEntity(baseplate);
 
 
         SettingsPanel settingsPanel = new SettingsPanel(scene.getUi().getContext());
